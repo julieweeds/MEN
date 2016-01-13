@@ -4,15 +4,15 @@ from setuptools import setup
 # Import this to prevent spurious error: info('process shutting down')
 from multiprocessing import util
 
-setup(name='mencc',
+setup(name='MEN',
       version='0.1',
       description='Experiments using MEN dataset',
       #url='http://github.com/storborg/funniest',
       author='Julie Weeds',
       #author_email='flyingcircus@example.com',
       license='MIT',
-      packages=['src/mencc'],
+      packages=['MEN'],
       #cmdclass = {'test': test},
       #options = {'test' : {'test_dir':['test']}}
-      #zip_safe=False
+      zip_safe=False
       )
