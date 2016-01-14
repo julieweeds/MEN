@@ -67,6 +67,8 @@ class MENManager:
             print pos
             exit(-1)
         print "Successfully generated SimEngine and loaded vectors"
+        print "Reweighting vectors"
+        self.mySimEngine.reweight(pos,weighting=self.weighting,ppmithreshold=self.wthreshold)
 
 
 
@@ -84,7 +86,8 @@ class MENManager:
             self.generate_simengine(pos)
             missed=[x for x in self.nounlist.keys() if self.nounlist[x]==0]
             print "Not found: ", missed
-            self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos))
+            self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
+            self.myMenReader.triples.correlate()
 
 if __name__=="__main__":
     myManager=MENManager(sys.argv[1])
