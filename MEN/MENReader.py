@@ -122,9 +122,12 @@ class Triples:
             if x>=0 and y>=0:
                 xs.append(x)
                 ys.append(y)
-        print "Spearman's Correlation Coefficient and p'value for Human Judgements vs Automatic Similarity over %s values: "%(str(len(xs))),stats.spearmanr(np.array(xs),np.array(ys))
+
+        c=stats.spearmanr(np.array(xs),np.array(ys))
+        print "Spearman's Correlation Coefficient and p'value for Human Judgements vs Automatic Similarity over %s values: "%(str(len(xs))),c
         if graphing_loaded and show_graph:
             graphing.makescatter(xs,ys)
+        return c[0]
 
 
 class MENReader:

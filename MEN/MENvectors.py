@@ -6,8 +6,6 @@ from compositionality.simEngine import SimEngine
 from MENReader import MENReader
 
 
-
-
 class MENManager:
 
     posmap={"N":"nouns","V":"verbs","J":"adjs","R":"advs"}
@@ -19,11 +17,12 @@ class MENManager:
         self.config=ConfigParser.RawConfigParser()
         self.config.read(self.configfile)
         self.myMenReader=MENReader(self.configfile)
+        self.whereami=self.config.get('default','whereami')
         self.pos=ast.literal_eval(self.config.get('default','pos'))
 
 
     def get_vector_name(self,pos):
-        self.myname=self.config.get('default','parentdir')+self.config.get('default','filename')
+        self.myname=self.config.get(self.whereami,'parentdir')+self.config.get('default','filename')
         mini = self.config.get('default','minorder')
         maxi = self.config.get('default','maxorder')
         if mini == "X":
@@ -38,8 +37,9 @@ class MENManager:
         self.normalised=(self.config.get('default','normalised')=="True")
         if self.normalised:
             self.suffix+=".norm"
-        self.weighting=self.config.get('default','weighting')
-        self.wthreshold=float(self.config.get('default','wthreshold'))
+        self.weighting=ast.literal_eval(self.config.get('default','weighting'))
+        self.wthreshold=ast.literal_eval(self.config.get('default','wthreshold'))
+        self.cds=(self.config.get('default','cds')=="True")
         return self.myname+self.suffix
 
     def _is_included_N(self,token):
@@ -67,8 +67,6 @@ class MENManager:
             print pos
             exit(-1)
         print "Successfully generated SimEngine and loaded vectors"
-        print "Reweighting vectors"
-        self.mySimEngine.reweight(pos,weighting=self.weighting,ppmithreshold=self.wthreshold)
 
 
 
@@ -86,8 +84,22 @@ class MENManager:
             self.generate_simengine(pos)
             missed=[x for x in self.nounlist.keys() if self.nounlist[x]==0]
             print "Not found: ", missed
-            self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
-            self.myMenReader.triples.correlate()
+
+            results=[]
+            weighting=[]
+            if self.cds:
+                weighting.append('smooth_ppmi')
+            for wt in self.weighting:
+
+                for w in self.wthreshold:
+                    print "Reweighting vectors"
+                    self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w))
+                    self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
+                    results.append((wt,w,self.myMenReader.triples.correlate(show_graph=False)))
+
+            print "Summary of results for ",self.weighting
+            for res in results:
+                print res[0],res[1],res[2]
 
 if __name__=="__main__":
     myManager=MENManager(sys.argv[1])
