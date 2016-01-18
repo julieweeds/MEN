@@ -39,7 +39,8 @@ class MENManager:
             self.suffix+=".norm"
         self.weighting=ast.literal_eval(self.config.get('default','weighting'))
         self.wthreshold=ast.literal_eval(self.config.get('default','wthreshold'))
-        self.cds=(self.config.get('default','cds')=="True")
+        self.cds=ast.literal_eval(self.config.get('default','cds'))
+        self.saliency=ast.literal_eval(self.config.get('default','saliency'))
         return self.myname+self.suffix
 
     def _is_included_N(self,token):
@@ -87,19 +88,21 @@ class MENManager:
 
             results=[]
             weighting=[]
-            if self.cds:
-                weighting.append('smooth_ppmi')
-            for wt in self.weighting:
+            for cds in self.cds:
+                if cds=='True':
+                    weighting.append('smooth_ppmi')
+                for wt in self.weighting:
 
-                for w in self.wthreshold:
-                    print "Reweighting vectors"
-                    self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w))
-                    self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
-                    results.append((wt,w,self.myMenReader.triples.correlate(show_graph=False)))
+                    for w in self.wthreshold:
+                        for cons in self.saliency:
+                            print "Reweighting vectors"
+                            self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w),saliency=cons)
+                            self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
+                            results.append((cds,wt,w,cons,self.myMenReader.triples.correlate(show_graph=False)))
 
             print "Summary of results for ",self.weighting
             for res in results:
-                print res[0],res[1],res[2]
+                print res[0],res[1],res[2],res[3],res[4]
 
 if __name__=="__main__":
     myManager=MENManager(sys.argv[1])
