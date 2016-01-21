@@ -19,6 +19,8 @@ class MENManager:
         self.myMenReader=MENReader(self.configfile)
         self.whereami=self.config.get('default','whereami')
         self.pos=ast.literal_eval(self.config.get('default','pos'))
+        self.options=ast.literal_eval(self.config.get('default','options'))
+        self.outputvectors=(self.config.get('default','outputvectors')=='True')
 
 
     def get_vector_name(self,pos):
@@ -70,10 +72,46 @@ class MENManager:
         print "Successfully generated SimEngine and loaded vectors"
 
 
+    def getvectorstream(self,pos,cds,wt,w,cons):
+        if self.outputvectors:
+            filename=self.get_vector_name(MENManager.posmap[pos])
+            if cds:
+                filename+="_cds"
+            filename+="_"+wt
+            filename+="_shift"+str(w)
+            filename+="_cs"+str(cons)
+            outstream=open(filename,"wb")
+            return outstream
+        else:
+            return None
 
+    def run_reweight(self):
+        for pos in self.pos:
+            print "Generating SimEngine"
+            filenames={}
+            filenames[pos]=self.get_vector_name(MENManager.posmap[pos])
+            try:
+                #self.mySimEngine=SimEngine(filenames,getattr(self,MENManager.INCLUDE_PREFIX))
+                self.mySimEngine=SimEngine(filenames,self._is_any)
+            except:
+                print "Fatal Error: Unable to generate simEngine"
+                print filenames
+                print pos
+                exit(-1)
+            print "Successfully generated SimEngine and loaded vectors"
+            weighting=[]
+            for cds in self.cds:
+                if cds=='True':
+                    weighting.append('smooth_ppmi')
+                for wt in self.weighting:
 
+                    for w in self.wthreshold:
+                        for cons in self.saliency:
+                            print "Reweighting vectors"
 
-    def run(self):
+                            self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w),saliency=cons,outstream=self.getvectorstream(pos,cds,wt,w,cons))
+
+    def run_MEN(self):
         self.myMenReader.readfile()
         self.tokenlists={}
         for pos in self.pos:
@@ -96,13 +134,23 @@ class MENManager:
                     for w in self.wthreshold:
                         for cons in self.saliency:
                             print "Reweighting vectors"
-                            self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w),saliency=cons)
+
+                            self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w),saliency=cons,outstream=self.getvectorstream(pos,cds,wt,w,cons))
                             self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
                             results.append((cds,wt,w,cons,self.myMenReader.triples.correlate(show_graph=False)))
 
             print "Summary of results for ",self.weighting
             for res in results:
                 print res[0],res[1],res[2],res[3],res[4]
+
+    def run(self):
+        if "MEN" in self.options:
+            self.run_MEN()
+        elif "reweight" in self.options:
+            self.run_reweight()
+        else:
+            print "Unknown options: ",self.options
+
 
 if __name__=="__main__":
     myManager=MENManager(sys.argv[1])
