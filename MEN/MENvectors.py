@@ -1,7 +1,7 @@
 __author__ = 'juliewe'
 
 
-import ConfigParser,sys,ast,random,numpy as np, scipy.stats as stats
+import ConfigParser,sys,ast,random,numpy as np, scipy.stats as stats,time
 from compositionality.simEngine import SimEngine
 from MENReader import MENReader
 
@@ -126,6 +126,8 @@ class MENManager:
 
             results=[]
             weighting=[]
+            resultsstream=open('men.out','ab')
+            resultsstream.write("Starting MEN evaluation at: "+time.strftime("%c")+"\n")
             for cds in self.cds:
                 if cds=='True':
                     weighting.append('smooth_ppmi')
@@ -137,12 +139,16 @@ class MENManager:
 
                             self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w),saliency=cons,outstream=self.getvectorstream(pos,cds,wt,w,cons))
                             self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
-                            results.append((cds,wt,w,cons,self.myMenReader.triples.correlate(show_graph=False)))
+                            res=(cds,wt,w,cons,self.myMenReader.triples.correlate(show_graph=False))
+                            resultsstream.write(res)
+                            resultsstream.write("\n")
+                            results.append(res)
 
             print "Summary of results for ",self.weighting
             for res in results:
                 print res[0],res[1],res[2],res[3],res[4]
-
+            resultsstream.write("Ending MEN evaluation at: "+time.strftime("%c")+"\n")
+            resultsstream.close()
     def run(self):
         if "MEN" in self.options:
             self.run_MEN()
