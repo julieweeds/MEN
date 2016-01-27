@@ -126,8 +126,9 @@ class MENManager:
 
             results=[]
             weighting=[]
-            resultsstream=open('men.out','ab')
+            resultsstream=open("men2.out","wb")
             resultsstream.write("Starting MEN evaluation at: "+time.strftime("%c")+"\n")
+            resultsstream.close()
             for cds in self.cds:
                 if cds=='True':
                     weighting.append('smooth_ppmi')
@@ -140,15 +141,21 @@ class MENManager:
                             self.mySimEngine.reweight(pos,weighting=[wt]+weighting,ppmithreshold=float(w),saliency=cons,outstream=self.getvectorstream(pos,cds,wt,w,cons))
                             self.myMenReader.updateAutoSims(self.mySimEngine.selectedSims(self.myMenReader.getPairList(pos)))
                             res=(cds,wt,w,cons,self.myMenReader.triples.correlate(show_graph=False))
+
+                            print res
+                            resultsstream=open("men2.out","ab")
                             resultsstream.write(res)
                             resultsstream.write("\n")
+                            resultsstream.close()
                             results.append(res)
 
             print "Summary of results for ",self.weighting
             for res in results:
                 print res[0],res[1],res[2],res[3],res[4]
+            resultsstream=open("men2.out","ab")
             resultsstream.write("Ending MEN evaluation at: "+time.strftime("%c")+"\n")
             resultsstream.close()
+
     def run(self):
         if "MEN" in self.options:
             self.run_MEN()
